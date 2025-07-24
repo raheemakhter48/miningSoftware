@@ -84,27 +84,28 @@ export default function Home() {
 
   // Fetch token balance
   const fetchTokenBalance = async () => {
-    if (!wallet || !(window as any).ethereum) return;
+    if (!wallet || !(window as typeof window & { ethereum?: any })?.ethereum) return;
     setLoadingBalance(true);
     try {
-      const provider = new ethers.BrowserProvider((window as any).ethereum);
+      const provider = new ethers.BrowserProvider((window as typeof window & { ethereum?: any })?.ethereum);
       const contract = new ethers.Contract(CONTRACT_ADDRESS, CONTRACT_ABI, provider);
       const decimals = await contract.decimals();
       const bal = await contract.balanceOf(wallet);
       setTokenBalance(ethers.formatUnits(bal, decimals));
-    } catch (err: any) {
-      setError("Failed to fetch token balance");
+    } catch (err: unknown) {
+      if (err instanceof Error) setError("Failed to fetch token balance: " + err.message);
+      else setError("Failed to fetch token balance: Unknown error");
     }
     setLoadingBalance(false);
   };
 
   // Claim faucet
   const claimFaucet = async () => {
-    if (!wallet || !(window as any).ethereum) return;
+    if (!wallet || !(window as typeof window & { ethereum?: any })?.ethereum) return;
     setFaucetLoading(true);
     setFaucetTx(null);
     try {
-      const provider = new ethers.BrowserProvider((window as any).ethereum);
+      const provider = new ethers.BrowserProvider((window as typeof window & { ethereum?: any })?.ethereum);
       const signer = await provider.getSigner();
       const contract = new ethers.Contract(CONTRACT_ADDRESS, CONTRACT_ABI, signer);
       const tx = await contract.faucet();
@@ -113,8 +114,9 @@ export default function Home() {
       await tx.wait();
       setLogs((prev) => ["Faucet claim successful!", ...prev]);
       fetchTokenBalance();
-    } catch (err: any) {
-      setError("Faucet claim failed: " + (err.reason || err.message));
+    } catch (err: unknown) {
+      if (err instanceof Error) setError("Faucet claim failed: " + (err.reason || err.message));
+      else setError("Faucet claim failed: Unknown error");
     }
     setFaucetLoading(false);
   };
@@ -137,37 +139,36 @@ export default function Home() {
       .order("created_at", { ascending: false })
       .limit(100);
     if (!error && data) {
-      setLogs(data.map((row: any) => row.message));
+      setLogs(data.map((row: { message: string; created_at: string }) => row.message));
     }
   }
 
   // Fetch logs on wallet change
   useEffect(() => {
     fetchLogs();
-    // eslint-disable-next-line
   }, [wallet]);
 
   // Fetch balance on wallet/network change
   useEffect(() => {
     fetchTokenBalance();
-    // eslint-disable-next-line
   }, [wallet, network]);
 
   // Connect wallet
   const connectWallet = async () => {
     setError(null);
-    if (!(window as any).ethereum) {
+    if (!(window as typeof window & { ethereum?: any })?.ethereum) {
       setError("MetaMask is not installed. Please install MetaMask and try again.");
       return;
     }
     try {
-      const provider = new ethers.BrowserProvider((window as any).ethereum);
+      const provider = new ethers.BrowserProvider((window as typeof window & { ethereum?: any })?.ethereum);
       const accounts = await provider.send("eth_requestAccounts", []);
       setWallet(accounts[0]);
       const net = await provider.getNetwork();
       setNetwork(net.name + ` (#${net.chainId})`);
-    } catch (err: any) {
-      setError(err.message || "Failed to connect wallet.");
+    } catch (err: unknown) {
+      if (err instanceof Error) setError(err.message || "Failed to connect wallet.");
+      else setError("Failed to connect wallet: Unknown error");
     }
   };
 
@@ -180,7 +181,7 @@ export default function Home() {
 
   // Listen for account/network changes
   useEffect(() => {
-    if (!(window as any).ethereum) return;
+    if (!(window as typeof window & { ethereum?: any })?.ethereum) return;
     const handleAccountsChanged = (accounts: string[]) => {
       if (accounts.length === 0) disconnectWallet();
       else setWallet(accounts[0]);
@@ -188,15 +189,14 @@ export default function Home() {
     const handleChainChanged = () => {
       connectWallet();
     };
-    (window as any).ethereum.on("accountsChanged", handleAccountsChanged);
-    (window as any).ethereum.on("chainChanged", handleChainChanged);
+    (window as typeof window & { ethereum?: any })?.ethereum.on("accountsChanged", handleAccountsChanged);
+    (window as typeof window & { ethereum?: any })?.ethereum.on("chainChanged", handleChainChanged);
     return () => {
-      if ((window as any).ethereum.removeListener) {
-        (window as any).ethereum.removeListener("accountsChanged", handleAccountsChanged);
-        (window as any).ethereum.removeListener("chainChanged", handleChainChanged);
+      if ((window as typeof window & { ethereum?: any })?.ethereum.removeListener) {
+        (window as typeof window & { ethereum?: any })?.ethereum.removeListener("accountsChanged", handleAccountsChanged);
+        (window as typeof window & { ethereum?: any })?.ethereum.removeListener("chainChanged", handleChainChanged);
       }
     };
-    // eslint-disable-next-line
   }, []);
 
   return (
