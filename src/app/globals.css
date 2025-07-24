@@ -5,13 +5,6 @@
   --foreground: #171717;
 }
 
-@theme inline {
-  --color-background: var(--background);
-  --color-foreground: var(--foreground);
-  --font-sans: var(--font-geist-sans);
-  --font-mono: var(--font-geist-mono);
-}
-
 @media (prefers-color-scheme: dark) {
   :root {
     --background: #0a0a0a;
@@ -22,5 +15,23 @@
 body {
   background: var(--background);
   color: var(--foreground);
-  font-family: Arial, Helvetica, sans-serif;
+  font-family: var(--font-geist-sans, Arial, Helvetica, sans-serif);
+  transition: background 0.3s, color 0.3s;
+}
+
+/* Custom card and button styles */
+.card {
+  @apply rounded-2xl shadow-lg p-6 bg-white dark:bg-[#181818] border border-gray-100 dark:border-gray-800 transition-colors;
+}
+.btn {
+  @apply px-6 py-2 rounded-lg font-semibold transition-colors shadow;
+}
+.btn-primary {
+  @apply bg-blue-500 hover:bg-blue-600 text-white;
+}
+.btn-secondary {
+  @apply bg-indigo-500 hover:bg-indigo-600 text-white;
+}
+.btn-danger {
+  @apply bg-red-500 hover:bg-red-600 text-white;
 }
